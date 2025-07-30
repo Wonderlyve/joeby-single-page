@@ -6,6 +6,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import BriefCommentsSheet from '@/components/BriefCommentsSheet';
+import { useDebriefings } from '@/hooks/useDebriefings';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 interface Comment {
   id: number;
@@ -19,27 +22,28 @@ const BriefPlayer = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const videoRef = useRef<HTMLVideoElement>(null);
+  const { user } = useAuth();
+  const { debriefings, likeDebriefing, fetchPublicDebriefings } = useDebriefings(null);
+
+  useEffect(() => {
+    fetchPublicDebriefings();
+  }, []);
   
   const [isPlaying, setIsPlaying] = useState(false);
-  const [liked, setLiked] = useState(false);
-  const [likes, setLikes] = useState(124);
-  const [views, setViews] = useState(2340);
   const [showComments, setShowComments] = useState(false);
   const [comment, setComment] = useState('');
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
 
-  // Mock data pour le brief
-  const briefData = {
-    id: id || '1',
-    title: 'Analyse du match PSG vs Real Madrid',
-    description: 'Débriefing complet de la rencontre avec analyse tactique et moments clés. Cette vidéo couvre les stratégies utilisées par les deux équipes, les changements tactiques en cours de match, et les performances individuelles qui ont marqué cette rencontre exceptionnelle.',
-    creator_username: 'PronoExpert',
-    creator_avatar: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=100&h=100&fit=crop&crop=face',
-    video_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-    created_at: '2024-01-28T10:30:00Z',
-    sharedLink: 'https://app.example.com/post/123' // Lien vers une publication
-  };
+  // Trouver le débriefing actuel
+  const briefData = debriefings.find(d => d.id === id);
+
+  useEffect(() => {
+    if (debriefings.length > 0 && !briefData) {
+      navigate('/brief');
+      return;
+    }
+  }, [briefData, navigate, debriefings.length]);
 
   const [comments, setComments] = useState<Comment[]>([
     {
@@ -101,13 +105,9 @@ const BriefPlayer = () => {
     setIsPlaying(!isPlaying);
   };
 
-  const handleLike = () => {
-    if (liked) {
-      setLikes(likes - 1);
-    } else {
-      setLikes(likes + 1);
-    }
-    setLiked(!liked);
+  const handleLike = async () => {
+    if (!briefData) return;
+    await likeDebriefing(briefData.id);
   };
 
   const handleAddComment = () => {
@@ -140,6 +140,14 @@ const BriefPlayer = () => {
   };
 
   const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
+
+  if (!briefData) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-white">Chargement...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-black flex flex-col">
@@ -216,7 +224,7 @@ const BriefPlayer = () => {
           
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <span>{formatViews(views)} vues</span>
+              <span>2.3K vues</span>
               <span>•</span>
               <span>{new Date(briefData.created_at).toLocaleDateString('fr-FR')}</span>
             </div>
@@ -226,10 +234,10 @@ const BriefPlayer = () => {
                 variant="ghost"
                 size="sm"
                 onClick={handleLike}
-                className={`flex items-center space-x-1 ${liked ? 'text-red-500' : 'text-gray-600'}`}
+                className={`flex items-center space-x-1 ${briefData.isLiked ? 'text-red-500' : 'text-gray-600'}`}
               >
-                <Heart className={`w-5 h-5 ${liked ? 'fill-current' : ''}`} />
-                <span>{likes}</span>
+                <Heart className={`w-5 h-5 ${briefData.isLiked ? 'fill-current' : ''}`} />
+                <span>{briefData.likes}</span>
               </Button>
               
               <Button
@@ -245,7 +253,7 @@ const BriefPlayer = () => {
           {/* Creator Info */}
           <div className="flex items-center space-x-3 mb-4">
             <img
-              src={briefData.creator_avatar}
+              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${briefData.creator_id}`}
               alt={briefData.creator_username}
               className="w-10 h-10 rounded-full"
             />
@@ -261,16 +269,16 @@ const BriefPlayer = () => {
           <div className="mb-4">
             <p className="text-gray-700 text-sm leading-relaxed">{briefData.description}</p>
             
-            {briefData.sharedLink && (
+            {briefData.post_link && (
               <div className="mt-3 p-3 bg-gray-50 rounded-lg">
                 <p className="text-sm text-gray-600 mb-2">Publication partagée :</p>
                 <a 
-                  href={briefData.sharedLink} 
+                  href={briefData.post_link} 
                   className="text-blue-600 text-sm underline"
                   target="_blank" 
                   rel="noopener noreferrer"
                 >
-                  {briefData.sharedLink}
+                  {briefData.post_link}
                 </a>
               </div>
             )}

@@ -97,21 +97,34 @@ const Brief = () => {
                   className="cursor-pointer"
                   onClick={() => openBrief(brief.id)}
                 >
-                  {/* Thumbnail en format paysage */}
-                  <div className="relative aspect-video bg-gray-200">
-                    <img
-                      src={brief.thumbnail_url || 'https://images.unsplash.com/photo-1605810230434-7631ac76ec81?w=400&h=225&fit=crop'}
-                      alt={brief.title}
-                      className="w-full h-full object-cover"
-                    />
+                   {/* Thumbnail en format paysage */}
+                  <div className="relative aspect-video bg-gray-900">
+                    {brief.thumbnail_url ? (
+                      <img
+                        src={brief.thumbnail_url}
+                        alt={brief.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
+                        <div className="text-center text-gray-400">
+                          <Play className="w-12 h-12 mx-auto mb-2" />
+                          <p className="text-sm font-medium">{brief.title}</p>
+                        </div>
+                      </div>
+                    )}
                     {/* Play overlay */}
                     <div className="absolute inset-0 flex items-center justify-center bg-black/20">
                       <div className="w-16 h-16 bg-black/60 rounded-full flex items-center justify-center">
                         <Play className="w-8 h-8 text-white ml-1" />
                       </div>
                     </div>
-                    {/* Stats overlay */}
+                     {/* Stats overlay */}
                     <div className="absolute bottom-2 right-2 bg-black/60 text-white px-2 py-1 rounded text-xs flex items-center space-x-3">
+                      <div className="flex items-center space-x-1">
+                        <Eye className="w-3 h-3" />
+                        <span>2.3K</span>
+                      </div>
                       <div className="flex items-center space-x-1">
                         <Heart className="w-3 h-3" />
                         <span>{brief.likes}</span>
