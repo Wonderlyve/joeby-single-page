@@ -264,7 +264,7 @@ export type Database = {
       }
       debriefings: {
         Row: {
-          channel_id: string
+          channel_id: string | null
           created_at: string
           creator_id: string
           description: string
@@ -278,7 +278,7 @@ export type Database = {
           video_url: string
         }
         Insert: {
-          channel_id: string
+          channel_id?: string | null
           created_at?: string
           creator_id: string
           description: string
@@ -292,7 +292,7 @@ export type Database = {
           video_url: string
         }
         Update: {
-          channel_id?: string
+          channel_id?: string | null
           created_at?: string
           creator_id?: string
           description?: string
