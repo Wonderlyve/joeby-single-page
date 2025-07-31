@@ -12,6 +12,8 @@ export interface Debriefing {
   creator_id: string;
   creator_username: string;
   likes: number;
+  views: number;
+  comments: number;
   isLiked: boolean;
   created_at: string;
   channel_id: string;
@@ -187,7 +189,8 @@ export const useDebriefings = (channelId: string | null) => {
         creator_id: user.id,
         channel_id: isPublicBrief ? null : channelId,
         is_public: isPublicBrief,
-        likes: 0
+        likes: 0,
+        views: 0
       };
 
       const { data, error } = await supabase

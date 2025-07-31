@@ -5,18 +5,12 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import BriefCommentsSheet from '@/components/BriefCommentsSheet';
+import DebriefingCommentsSheet from '@/components/DebriefingCommentsSheet';
 import { useDebriefings } from '@/hooks/useDebriefings';
+import { useDebriefingViews } from '@/hooks/useDebriefingViews';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
-interface Comment {
-  id: number;
-  username: string;
-  message: string;
-  timestamp: string;
-  avatar: string;
-}
 
 const BriefPlayer = () => {
   const { id } = useParams();
@@ -24,6 +18,7 @@ const BriefPlayer = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const { user } = useAuth();
   const { debriefings, likeDebriefing, fetchPublicDebriefings } = useDebriefings(null);
+  const { addView } = useDebriefingViews();
 
   useEffect(() => {
     fetchPublicDebriefings();
@@ -31,12 +26,18 @@ const BriefPlayer = () => {
   
   const [isPlaying, setIsPlaying] = useState(false);
   const [showComments, setShowComments] = useState(false);
-  const [comment, setComment] = useState('');
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
 
   // Trouver le débriefing actuel
   const briefData = debriefings.find(d => d.id === id);
+
+  // Ajouter une vue quand on commence à regarder la vidéo
+  useEffect(() => {
+    if (briefData && isPlaying) {
+      addView(briefData.id);
+    }
+  }, [briefData, isPlaying, addView]);
 
   useEffect(() => {
     if (debriefings.length > 0 && !briefData) {
@@ -44,32 +45,6 @@ const BriefPlayer = () => {
       return;
     }
   }, [briefData, navigate, debriefings.length]);
-
-  const [comments, setComments] = useState<Comment[]>([
-    {
-      id: 1,
-      username: 'FootballFan',
-      message: 'Excellente analyse ! Tu as raison sur la tactique du PSG 👏',
-      timestamp: 'Il y a 2h',
-      avatar: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=50&h=50&fit=crop&crop=face'
-    },
-    {
-      id: 2,
-      username: 'BetExpert',
-      message: 'Très bon débriefing, ça m\'aide pour mes prochains paris',
-      timestamp: 'Il y a 1h',
-      avatar: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=50&h=50&fit=crop&crop=face'
-    },
-    {
-      id: 3,
-      username: 'SportLover',
-      message: 'Peux-tu faire la même chose pour la Ligue 1 ?',
-      timestamp: 'Il y a 30min',
-      avatar: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=50&h=50&fit=crop&crop=face'
-    }
-  ]);
-
-  const lastComment = comments[comments.length - 1];
 
   // Video controls
   useEffect(() => {
@@ -110,19 +85,6 @@ const BriefPlayer = () => {
     await likeDebriefing(briefData.id);
   };
 
-  const handleAddComment = () => {
-    if (comment.trim()) {
-      const newComment: Comment = {
-        id: comments.length + 1,
-        username: 'Vous',
-        message: comment,
-        timestamp: 'Maintenant',
-        avatar: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=50&h=50&fit=crop&crop=face'
-      };
-      setComments([...comments, newComment]);
-      setComment('');
-    }
-  };
 
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
@@ -224,7 +186,7 @@ const BriefPlayer = () => {
           
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <span>2.3K vues</span>
+              <span>{formatViews(briefData.views)} vues</span>
               <span>•</span>
               <span>{new Date(briefData.created_at).toLocaleDateString('fr-FR')}</span>
             </div>
@@ -287,7 +249,7 @@ const BriefPlayer = () => {
           {/* Comments Preview */}
           <div className="border-t border-gray-200 pt-4">
             <div className="flex items-center justify-between mb-3">
-              <span className="font-medium text-gray-900">Commentaires {comments.length}</span>
+              <span className="font-medium text-gray-900">Commentaires {briefData.comments || 0}</span>
               <Button
                 variant="ghost"
                 size="sm"
@@ -298,25 +260,19 @@ const BriefPlayer = () => {
               </Button>
             </div>
             
-            {lastComment && (
-              <div 
-                className="flex items-start space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg -mx-2"
-                onClick={() => setShowComments(true)}
-              >
-                <img
-                  src={lastComment.avatar}
-                  alt={lastComment.username}
-                  className="w-8 h-8 rounded-full"
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center space-x-2">
-                    <span className="font-medium text-sm text-gray-900">{lastComment.username}</span>
-                    <span className="text-xs text-gray-500">{lastComment.timestamp}</span>
-                  </div>
-                  <p className="text-sm text-gray-700 line-clamp-2">{lastComment.message}</p>
-                </div>
+            <div 
+              className="flex items-start space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg -mx-2"
+              onClick={() => setShowComments(true)}
+            >
+              <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                <MessageCircle className="w-4 h-4 text-gray-500" />
               </div>
-            )}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-gray-500">
+                  {briefData.comments > 0 ? 'Voir les commentaires' : 'Soyez le premier à commenter'}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -341,14 +297,11 @@ const BriefPlayer = () => {
       </div>
 
       {/* Comments Bottom Sheet */}
-      <BriefCommentsSheet
+      <DebriefingCommentsSheet
         isOpen={showComments}
         onClose={() => setShowComments(false)}
-        comments={comments}
-        onAddComment={handleAddComment}
-        newComment={comment}
-        onCommentChange={setComment}
-        title={`${comments.length} commentaires`}
+        debriefingId={briefData.id}
+        title={`${briefData.comments || 0} commentaires`}
       />
     </div>
   );

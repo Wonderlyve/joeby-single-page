@@ -1,16 +1,20 @@
 import { useState, useEffect } from 'react';
-import { Play, Plus, Eye, Heart, ArrowLeft } from 'lucide-react';
+import { Play, Eye, Heart, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import BottomNavigation from '@/components/BottomNavigation';
 import DebriefingModal from '@/components/channel-chat/DebriefingModal';
+import LoadingModal from '@/components/LoadingModal';
+import SuccessModal from '@/components/SuccessModal';
 import { useDebriefings } from '@/hooks/useDebriefings';
 import { toast } from 'sonner';
 
 const Brief = () => {
   const navigate = useNavigate();
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showLoadingModal, setShowLoadingModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const { debriefings, loading, createPublicBrief, fetchPublicDebriefings } = useDebriefings(null);
 
   useEffect(() => {
@@ -22,9 +26,14 @@ const Brief = () => {
   };
 
   const handleCreateBrief = async (briefData: any) => {
+    setShowCreateModal(false);
+    setShowLoadingModal(true);
+    
     const success = await createPublicBrief(briefData);
+    setShowLoadingModal(false);
+    
     if (success) {
-      setShowCreateModal(false);
+      setShowSuccessModal(true);
     }
   };
 
@@ -160,20 +169,24 @@ const Brief = () => {
         )}
       </div>
 
-      {/* Floating Create Button */}
-      <Button
-        onClick={() => setShowCreateModal(true)}
-        className="fixed bottom-24 right-4 w-14 h-14 rounded-full shadow-lg bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 border-4 border-white z-40"
-        size="icon"
-      >
-        <Plus className="w-6 h-6" />
-      </Button>
-
-      {/* Create Brief Modal */}
+      {/* Modals */}
       <DebriefingModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onSubmit={handleCreateBrief}
+      />
+      
+      <LoadingModal
+        isOpen={showLoadingModal}
+        title="Publication en cours..."
+        description="Votre brief est en cours de publication, veuillez patienter."
+      />
+      
+      <SuccessModal
+        isOpen={showSuccessModal}
+        title="Brief publié !"
+        description="Votre brief a été publié avec succès et est maintenant visible par tous."
+        onClose={() => setShowSuccessModal(false)}
       />
 
       <BottomNavigation />
