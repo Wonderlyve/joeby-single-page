@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useFollows } from '@/hooks/useFollows';
 import FollowsList from '@/components/FollowsList';
+import FollowersListView from '@/components/FollowersListView';
 
 interface UserPost {
   id: string;
@@ -495,14 +496,7 @@ const Profile = () => {
           </TabsContent>
           
           <TabsContent value="followers" className="mt-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Abonnés</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-500">Aucun abonné pour le moment</p>
-              </CardContent>
-            </Card>
+            <FollowersListView userId={user?.id || ''} />
           </TabsContent>
         </Tabs>
       </div>
