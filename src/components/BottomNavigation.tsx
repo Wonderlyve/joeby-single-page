@@ -5,6 +5,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import CreatePredictionModal from './CreatePredictionModal';
 import DebriefingModal from './channel-chat/DebriefingModal';
+import LoadingModal from './LoadingModal';
+import SuccessModal from './SuccessModal';
 import { useDebriefings } from '@/hooks/useDebriefings';
 import { toast } from 'sonner';
 
@@ -14,20 +16,42 @@ const BottomNavigation = () => {
   const { user, requireAuth } = useAuth();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showBriefModal, setShowBriefModal] = useState(false);
-  const { createDebriefing } = useDebriefings(null);
+  const [showLoadingModal, setShowLoadingModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const { createPublicBrief } = useDebriefings(null);
   
   const handleCreateClick = () => {
     if (requireAuth()) {
-      // Toujours rediriger vers la page Brief pour créer des briefs publics
-      navigate('/brief');
+      // Créer un post si on est sur la page d'accueil, sinon créer un brief
+      if (location.pathname === '/') {
+        setShowCreateModal(true);
+      } else {
+        setShowBriefModal(true);
+      }
     }
   };
 
   const handleCreateBrief = async (briefData: any) => {
-    // Redirige vers la page Brief pour que l'utilisateur utilise la création de brief publique
-    toast.info('Utilisez le bouton de création sur la page Brief pour publier un brief public');
-    setShowBriefModal(false);
-    navigate('/brief');
+    try {
+      setShowBriefModal(false);
+      setShowLoadingModal(true);
+      
+      const success = await createPublicBrief(briefData);
+      
+      setShowLoadingModal(false);
+      
+      if (success) {
+        setShowSuccessModal(true);
+        // Rediriger vers la page Brief si on n'y est pas déjà
+        if (location.pathname !== '/brief') {
+          navigate('/brief');
+        }
+      }
+    } catch (error) {
+      setShowLoadingModal(false);
+      console.error('Erreur lors de la création du brief:', error);
+      toast.error('Erreur lors de la publication du brief');
+    }
   };
 
   const handleProfileClick = () => {
@@ -94,6 +118,17 @@ const BottomNavigation = () => {
             isOpen={showBriefModal}
             onClose={() => setShowBriefModal(false)}
             onSubmit={handleCreateBrief}
+          />
+          <LoadingModal
+            isOpen={showLoadingModal}
+            title="Publication en cours..."
+            description="Votre brief est en cours de publication, veuillez patienter."
+          />
+          <SuccessModal
+            isOpen={showSuccessModal}
+            title="Brief publié !"
+            description="Votre brief a été publié avec succès et est maintenant visible par tous."
+            onClose={() => setShowSuccessModal(false)}
           />
         </>
       )}

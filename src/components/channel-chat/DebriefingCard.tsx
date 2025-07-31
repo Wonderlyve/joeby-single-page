@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import { Play, Pause, Heart, MoreVertical, Trash2 } from 'lucide-react';
+import { Play, Pause, Heart, MoreVertical, Trash2, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
+import { useDebriefingViews } from '@/hooks/useDebriefingViews';
 
 export interface Debriefing {
   id: string;
@@ -12,6 +13,7 @@ export interface Debriefing {
   creator_id: string;
   creator_username: string;
   likes: number;
+  views: number;
   isLiked: boolean;
   created_at: string;
 }
@@ -27,7 +29,9 @@ const DebriefingCard = ({ debriefing, isCreator, onLike, onDelete }: DebriefingC
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [hasViewBeenAdded, setHasViewBeenAdded] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const { addView } = useDebriefingViews();
 
   useEffect(() => {
     const video = videoRef.current;
@@ -56,7 +60,7 @@ const DebriefingCard = ({ debriefing, isCreator, onLike, onDelete }: DebriefingC
     };
   }, []);
 
-  const togglePlay = () => {
+  const togglePlay = async () => {
     const video = videoRef.current;
     if (!video) return;
 
@@ -64,6 +68,13 @@ const DebriefingCard = ({ debriefing, isCreator, onLike, onDelete }: DebriefingC
       video.pause();
     } else {
       video.play();
+      // Add view when video starts playing (only once per session)
+      if (!hasViewBeenAdded) {
+        const viewAdded = await addView(debriefing.id);
+        if (viewAdded) {
+          setHasViewBeenAdded(true);
+        }
+      }
     }
     setIsPlaying(!isPlaying);
   };
@@ -189,6 +200,11 @@ const DebriefingCard = ({ debriefing, isCreator, onLike, onDelete }: DebriefingC
             <Heart className={`w-5 h-5 ${debriefing.isLiked ? 'fill-current' : ''}`} />
             <span>{debriefing.likes}</span>
           </Button>
+          
+          <div className="flex items-center space-x-2 text-gray-600">
+            <Eye className="w-5 h-5" />
+            <span>{debriefing.views}</span>
+          </div>
         </div>
       </div>
     </div>
