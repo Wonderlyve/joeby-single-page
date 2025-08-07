@@ -11,6 +11,9 @@ export interface Channel {
   creator_id: string;
   is_private: boolean;
   price: number;
+  currency: string;
+  subscription_code?: string;
+  image_url?: string;
   created_at: string;
   updated_at: string;
   creator_username?: string;
@@ -93,6 +96,9 @@ export const useChannels = () => {
     name: string;
     description: string;
     price: number;
+    currency: string;
+    subscription_code?: string;
+    image_url?: string;
   }) => {
     if (!user) {
       toast.error('Vous devez être connecté pour créer un canal');
@@ -106,6 +112,9 @@ export const useChannels = () => {
           name: channelData.name,
           description: channelData.description,
           price: channelData.price,
+          currency: channelData.currency,
+          subscription_code: channelData.subscription_code,
+          image_url: channelData.image_url,
           creator_id: user.id,
           is_private: true
         })
@@ -159,12 +168,38 @@ export const useChannels = () => {
     return userSubscriptions.includes(channelId);
   };
 
+  const deleteChannel = async (channelId: string) => {
+    if (!user) {
+      toast.error('Vous devez être connecté pour supprimer un canal');
+      return false;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('channels')
+        .delete()
+        .eq('id', channelId)
+        .eq('creator_id', user.id);
+
+      if (error) throw error;
+
+      toast.success('Canal supprimé avec succès');
+      await fetchChannels(); // Refresh the list
+      return true;
+    } catch (error) {
+      console.error('Error deleting channel:', error);
+      toast.error('Erreur lors de la suppression du canal');
+      return false;
+    }
+  };
+
   return {
     channels,
     loading,
     userSubscriptions,
     createChannel,
     subscribeToChannel,
+    deleteChannel,
     isSubscribed,
     refetch: fetchChannels
   };

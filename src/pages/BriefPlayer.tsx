@@ -46,27 +46,46 @@ const BriefPlayer = () => {
     }
   }, [briefData, navigate, debriefings.length]);
 
-  // Video controls
+  // Video controls and autoplay
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
     const handleLoadedMetadata = () => {
       setDuration(video.duration);
+      // Auto-play the video when metadata is loaded
+      video.play().then(() => {
+        setIsPlaying(true);
+      }).catch((error) => {
+        console.log('Autoplay failed:', error);
+        // Autoplay failed, user will need to click play
+      });
     };
 
     const handleTimeUpdate = () => {
       setCurrentTime(video.currentTime);
     };
 
+    const handlePlay = () => {
+      setIsPlaying(true);
+    };
+
+    const handlePause = () => {
+      setIsPlaying(false);
+    };
+
     video.addEventListener('loadedmetadata', handleLoadedMetadata);
     video.addEventListener('timeupdate', handleTimeUpdate);
+    video.addEventListener('play', handlePlay);
+    video.addEventListener('pause', handlePause);
 
     return () => {
       video.removeEventListener('loadedmetadata', handleLoadedMetadata);
       video.removeEventListener('timeupdate', handleTimeUpdate);
+      video.removeEventListener('play', handlePlay);
+      video.removeEventListener('pause', handlePause);
     };
-  }, []);
+  }, [briefData]);
 
   const togglePlay = () => {
     const video = videoRef.current;
@@ -147,20 +166,18 @@ const BriefPlayer = () => {
           />
           
           {/* Play/Pause Overlay */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={togglePlay}
-              className="w-20 h-20 bg-black/30 hover:bg-black/50 text-white rounded-full opacity-0 hover:opacity-100 transition-opacity"
-            >
-              {isPlaying ? (
-                <Pause className="w-10 h-10" />
-              ) : (
+          {!isPlaying && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={togglePlay}
+                className="w-20 h-20 bg-black/30 hover:bg-black/50 text-white rounded-full opacity-0 hover:opacity-100 transition-opacity"
+              >
                 <Play className="w-10 h-10 ml-1" />
-              )}
-            </Button>
-          </div>
+              </Button>
+            </div>
+          )}
 
           {/* Video Controls */}
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">

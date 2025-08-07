@@ -27,6 +27,7 @@ export interface Post {
   badge?: string;
   like_count?: number;
   comment_count?: number;
+  reservation_code?: string;
 }
 
 export const usePosts = () => {
@@ -55,16 +56,33 @@ export const usePosts = () => {
         return;
       }
 
+      // Récupérer tous les profils pour vérifier les custom_username
+      const { data: allProfiles } = await supabase
+        .from('profiles')
+        .select('username, display_name, avatar_url, badge');
+
       // Transform data to match Post interface
-      const transformedPosts = data?.map((post: any) => ({
-        ...post,
-        username: post.profiles?.username,
-        display_name: post.profiles?.display_name,
-        avatar_url: post.profiles?.avatar_url,
-        badge: post.profiles?.badge,
-        like_count: post.likes,
-        comment_count: post.comments
-      })) || [];
+      const transformedPosts = data?.map((post: any) => {
+        let profileData = post.profiles;
+        
+        // Si custom_username existe, chercher le profil correspondant
+        if (post.custom_username) {
+          const customProfile = allProfiles?.find(p => p.username === post.custom_username);
+          if (customProfile) {
+            profileData = customProfile;
+          }
+        }
+
+        return {
+          ...post,
+          username: profileData?.username,
+          display_name: profileData?.display_name,
+          avatar_url: profileData?.avatar_url,
+          badge: profileData?.badge,
+          like_count: post.likes,
+          comment_count: post.comments
+        };
+      }) || [];
 
       setPosts(transformedPosts);
     } catch (error) {
@@ -113,6 +131,8 @@ export const usePosts = () => {
     confidence: number;
     image_file?: File;
     video_file?: File;
+    username?: string;
+    reservation_code?: string;
   }) => {
     if (!user) {
       toast.error('Vous devez être connecté pour créer un post');
@@ -146,6 +166,8 @@ export const usePosts = () => {
           confidence: postData.confidence,
           image_url,
           video_url,
+          custom_username: postData.username,
+          reservation_code: postData.reservation_code,
           likes: 0,
           comments: 0,
           shares: 0,
@@ -166,6 +188,58 @@ export const usePosts = () => {
     } catch (error) {
       console.error('Error:', error);
       toast.error('Erreur lors de la création du post');
+      return null;
+    }
+  };
+
+  const updatePost = async (postId: string, imageFile?: File, videoFile?: File) => {
+    if (!user) {
+      toast.error('Vous devez être connecté pour modifier un post');
+      return null;
+    }
+
+    try {
+      let image_url = null;
+      let video_url = null;
+      const updateData: any = {};
+
+      // Upload new image if provided
+      if (imageFile) {
+        image_url = await uploadFile(imageFile, 'post-images');
+        updateData.image_url = image_url;
+      }
+
+      // Upload new video if provided
+      if (videoFile) {
+        video_url = await uploadFile(videoFile, 'post-videos');
+        updateData.video_url = video_url;
+      }
+
+      // Only update if there are changes
+      if (Object.keys(updateData).length === 0) {
+        toast.info('Aucune modification à sauvegarder');
+        return null;
+      }
+
+      const { data, error } = await supabase
+        .from('posts')
+        .update(updateData)
+        .eq('id', postId)
+        .eq('user_id', user.id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating post:', error);
+        toast.error('Erreur lors de la modification du post');
+        return null;
+      }
+
+      fetchPosts(); // Refresh posts
+      return data;
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Erreur lors de la modification du post');
       return null;
     }
   };
@@ -226,6 +300,7 @@ export const usePosts = () => {
     posts,
     loading,
     createPost,
+    updatePost,
     likePost,
     refetch: fetchPosts
   };

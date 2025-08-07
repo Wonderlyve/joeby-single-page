@@ -10,9 +10,10 @@ import SideMenu from '@/components/SideMenu';
 import NotificationIcon from '@/components/NotificationIcon';
 import { useOptimizedPosts } from '@/hooks/useOptimizedPosts';
 import { useAuth } from '@/hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import PostSkeleton from '@/optimization/PostSkeleton';
 import { supabase } from '@/integrations/supabase/client';
+import SimpleUpdatePost from '@/components/SimpleUpdatePost';
 
 const Index = () => {
   const [sideMenuOpen, setSideMenuOpen] = useState(false);
@@ -26,6 +27,10 @@ const Index = () => {
   const { posts, loading, initialLoading } = useOptimizedPosts();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Gérer l'affichage d'un post spécifique depuis une notification
+  const [highlightedPostId, setHighlightedPostId] = useState<string | null>(null);
 
   // Charger les posts masqués et utilisateurs bloqués
   useEffect(() => {
@@ -58,6 +63,32 @@ const Index = () => {
 
     loadUserFilters();
   }, [user]);
+
+  // Gérer le paramètre post dans l'URL pour les notifications
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const postId = searchParams.get('post');
+    
+    if (postId) {
+      setHighlightedPostId(postId);
+      
+      // Faire défiler vers le post après un court délai
+      setTimeout(() => {
+        const element = document.getElementById(`post-${postId}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 500);
+      
+      // Enlever le surlignage après 3 secondes
+      setTimeout(() => {
+        setHighlightedPostId(null);
+        // Nettoyer l'URL
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, '', newUrl);
+      }, 3000);
+    }
+  }, [location.search]);
 
   const handleOpenModal = (data: any) => {
     // Modal handling logic if needed
@@ -115,14 +146,25 @@ const Index = () => {
   };
 
   // Transform Post to PredictionCard format
-  const transformPostToPrediction = (post: any) => ({
+  const transformPostToPrediction = (post: any) => {
+    // Déterminer les données utilisateur à afficher
+    const hasCustomUsername = post.custom_username && post.custom_username !== 'Smart';
+    const displayUsername = hasCustomUsername ? post.custom_username : (post.display_name || post.username || 'Utilisateur');
+    const displayAvatar = post.avatar_url || (hasCustomUsername ? 
+      `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.custom_username}` : 
+      `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.user_id}`);
+    const displayBadge = post.badge || (hasCustomUsername ? 'Pro' : 'Nouveau');
+    const badgeColor = post.badge ? 'bg-blue-500' : (hasCustomUsername ? 'bg-blue-500' : 'bg-gray-500');
+
+    return {
     id: post.id,
     user_id: post.user_id, // Ajout du user_id pour la détection du propriétaire
+    post_type: post.post_type || 'prediction', // Ajout du type de post
     user: {
-      username: post.display_name || post.username || 'Utilisateur',
-      avatar: post.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + post.user_id,
-      badge: 'Nouveau',
-      badgeColor: 'bg-gray-500'
+      username: displayUsername,
+      avatar: displayAvatar,
+      badge: displayBadge,
+      badgeColor: badgeColor
     },
     match: post.match_teams || 'Match non spécifié',
     prediction: post.prediction_text || 'Pronostic non spécifié',
@@ -138,8 +180,11 @@ const Index = () => {
     sport: post.sport || 'Sport',
     image: post.image_url,
     video: post.video_url,
+    reservationCode: post.reservation_code,
+    betType: post.bet_type,
     is_liked: post.is_liked || false
-  });
+    };
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -189,8 +234,8 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Search Bar et Filtres */}
-      <div className="bg-white border-b">
+      {/* Search Bar et Filtres - Fixe */}
+      <div className="bg-white border-b sticky top-[73px] z-30">
         <div className="max-w-2xl mx-auto px-4 py-3">
           <div className="space-y-3">
             <div className="flex items-center space-x-2">
@@ -273,6 +318,9 @@ const Index = () => {
 
       {/* Content */}
       <div className="max-w-2xl mx-auto px-4 py-4 pb-20 space-y-4">
+        {/* Update Notification Post */}
+        <SimpleUpdatePost />
+        
         {initialLoading ? (
           <div className="space-y-4">
             {[...Array(3)].map((_, i) => (
@@ -287,11 +335,20 @@ const Index = () => {
           </div>
         ) : (
           filteredPosts.map((post) => (
-            <PredictionCard 
+            <div 
               key={post.id} 
-              prediction={transformPostToPrediction(post)} 
-              onOpenModal={handleOpenModal}
-            />
+              id={`post-${post.id}`}
+              className={`transition-all duration-1000 ${
+                highlightedPostId === post.id 
+                  ? 'ring-2 ring-blue-500 ring-opacity-75 shadow-lg' 
+                  : ''
+              }`}
+            >
+              <PredictionCard 
+                prediction={transformPostToPrediction(post)} 
+                onOpenModal={handleOpenModal}
+              />
+            </div>
           ))
         )}
 
