@@ -76,8 +76,8 @@ const DebriefingCommentsSheet: React.FC<DebriefingCommentsSheetProps> = ({
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent side="bottom" className="h-[80vh] max-h-[600px] p-0">
-        <SheetHeader className="p-4 border-b">
+      <SheetContent side="bottom" className="h-[80vh] max-h-[600px] p-0 flex flex-col">
+        <SheetHeader className="p-4 border-b flex-shrink-0">
           <div className="flex items-center justify-between">
             <SheetTitle>{title} ({totalComments})</SheetTitle>
             <Button variant="ghost" size="icon" onClick={onClose}>
@@ -86,84 +86,86 @@ const DebriefingCommentsSheet: React.FC<DebriefingCommentsSheetProps> = ({
           </div>
         </SheetHeader>
         
-        <div className="flex flex-col h-full">
-          {/* Comments list */}
-          <ScrollArea className="flex-1 p-4">
-            {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="text-gray-500">Chargement des commentaires...</div>
-              </div>
-            ) : comments.length === 0 ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="text-gray-500">Aucun commentaire pour le moment</div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {comments.map((comment) => (
-                  <DebriefingCommentItem
-                    key={comment.id}
-                    comment={comment}
-                    onReply={handleReply}
-                    onLike={handleLike}
-                    onDelete={handleDelete}
-                  />
-                ))}
-              </div>
-            )}
-          </ScrollArea>
-          
-          {/* Comment input */}
-          {user && (
-            <div className="border-t p-4">
-              {replyTo && (
-                <div className="flex items-center justify-between mb-2 p-2 bg-gray-50 rounded">
-                  <span className="text-sm text-gray-600">
-                    En réponse à {replyTo.username}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setReplyTo(null);
-                      setNewComment('');
-                    }}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
+        {/* Comments list - scrollable area */}
+        <div className="flex-1 overflow-hidden">
+          <ScrollArea className="h-full">
+            <div className="p-4">
+              {loading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-gray-500">Chargement des commentaires...</div>
+                </div>
+              ) : comments.length === 0 ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-gray-500">Aucun commentaire pour le moment</div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {comments.map((comment) => (
+                    <DebriefingCommentItem
+                      key={comment.id}
+                      comment={comment}
+                      onReply={handleReply}
+                      onLike={handleLike}
+                      onDelete={handleDelete}
+                    />
+                  ))}
                 </div>
               )}
-              
-              <div className="flex space-x-2">
-                <Textarea
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  placeholder={replyTo ? `Répondre à ${replyTo.username}...` : "Ajouter un commentaire..."}
-                  className="flex-1 min-h-[40px] max-h-[100px] resize-none"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSubmitComment();
-                    }
-                  }}
-                />
+            </div>
+          </ScrollArea>
+        </div>
+        
+        {/* Comment input - fixed at bottom */}
+        {user && (
+          <div className="border-t p-4 bg-white flex-shrink-0">
+            {replyTo && (
+              <div className="flex items-center justify-between mb-2 p-2 bg-gray-50 rounded">
+                <span className="text-sm text-gray-600">
+                  En réponse à {replyTo.username}
+                </span>
                 <Button
-                  onClick={handleSubmitComment}
-                  disabled={!newComment.trim() || isSubmitting}
-                  size="icon"
-                  className="flex-shrink-0"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setReplyTo(null);
+                    setNewComment('');
+                  }}
                 >
-                  <Send className="w-4 h-4" />
+                  <X className="w-4 h-4" />
                 </Button>
               </div>
+            )}
+            
+            <div className="flex space-x-2">
+              <Textarea
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder={replyTo ? `Répondre à ${replyTo.username}...` : "Ajouter un commentaire..."}
+                className="flex-1 min-h-[40px] max-h-[100px] resize-none border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSubmitComment();
+                  }
+                }}
+              />
+              <Button
+                onClick={handleSubmitComment}
+                disabled={!newComment.trim() || isSubmitting}
+                size="icon"
+                className="flex-shrink-0 bg-blue-600 hover:bg-blue-700"
+              >
+                <Send className="w-4 h-4" />
+              </Button>
             </div>
-          )}
-          
-          {!user && (
-            <div className="border-t p-4 text-center">
-              <span className="text-gray-500">Connectez-vous pour commenter</span>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
+        
+        {!user && (
+          <div className="border-t p-4 text-center bg-white flex-shrink-0">
+            <span className="text-gray-500">Connectez-vous pour commenter</span>
+          </div>
+        )}
       </SheetContent>
     </Sheet>
   );

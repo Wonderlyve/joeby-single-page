@@ -33,11 +33,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { usePostLikes } from '@/hooks/usePostLikes';
 import { usePostComments } from '@/hooks/usePostComments';
 import { CommentsBottomSheet } from '@/components/CommentsBottomSheet';
+import EditPostModal from '@/components/EditPostModal';
+import { usePosts } from '@/hooks/usePosts';
 
 interface PredictionCardProps {
   prediction: {
     id: string;
     user_id?: string;
+    post_type?: string;
     user: {
       username: string;
       avatar: string;
@@ -58,6 +61,8 @@ interface PredictionCardProps {
     image?: string;
     video?: string;
     totalOdds?: string;
+    reservationCode?: string;
+    betType?: string;
     matches?: Array<{
       id: string;
       teams: string;
@@ -65,6 +70,7 @@ interface PredictionCardProps {
       odds: string;
       league: string;
       time: string;
+      betType?: string;
     }>;
     is_liked?: boolean;
   };
@@ -75,6 +81,7 @@ const PredictionCard = ({ prediction, onOpenModal }: PredictionCardProps) => {
   const navigate = useNavigate();
   const { requireAuth, user } = useAuth();
   const { likePost } = useOptimizedPosts();
+  const { updatePost } = usePosts();
   const { isLiked: isPostLiked, likesCount: postLikesCount, toggleLike } = usePostLikes(prediction.id);
   const { commentsCount } = usePostComments(prediction.id);
   const { addView } = usePostViews();
@@ -110,6 +117,8 @@ const PredictionCard = ({ prediction, onOpenModal }: PredictionCardProps) => {
   const [isBlocked, setIsBlocked] = useState(false);
   const [actionStatesLoaded, setActionStatesLoaded] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showFullText, setShowFullText] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const hideControlsTimeout = useRef<NodeJS.Timeout>();
 
@@ -169,7 +178,12 @@ const PredictionCard = ({ prediction, onOpenModal }: PredictionCardProps) => {
   };
 
   const handleEditPost = () => {
-    toast.info('Modification du post - Fonctionnalité en développement');
+    setShowEditModal(true);
+  };
+
+  const handleSavePost = async (postId: string, imageFile?: File, videoFile?: File) => {
+    await updatePost(postId, imageFile, videoFile);
+    setShowEditModal(false);
   };
 
   const handleDeletePost = async () => {
@@ -416,7 +430,13 @@ const PredictionCard = ({ prediction, onOpenModal }: PredictionCardProps) => {
               <div className="flex items-center space-x-2 text-xs text-gray-500">
                 <span>{prediction.successRate}% de réussite</span>
                 <span>•</span>
-                <span className="px-2 py-1 bg-gray-100 rounded-full">{prediction.sport}</span>
+                <span className={`px-2 py-1 rounded-full ${
+                  prediction.sport === 'News' 
+                    ? 'bg-red-500 text-white' 
+                    : 'bg-gray-100 text-gray-500'
+                }`}>
+                  {prediction.sport}
+                </span>
               </div>
             </div>
           </div>
@@ -522,24 +542,89 @@ const PredictionCard = ({ prediction, onOpenModal }: PredictionCardProps) => {
           </ProtectedComponent>
         </div>
 
-        {/* Match Info */}
+        {/* Match Info or News Title */}
         <div className="mb-3">
-          <div className="font-semibold text-lg text-gray-900 mb-2">{prediction.match}</div>
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center space-x-2">
-              <span className="text-gray-600">Cote: {prediction.odds}</span>
-              {prediction.totalOdds && (
-                <span className="text-sm text-orange-600 font-medium">
-                  Cote totale: {prediction.totalOdds}
+          <div className="font-semibold text-lg text-gray-900 mb-2">
+            {prediction.match.length > 45 && !showFullText ? (
+              <>
+                {prediction.match.substring(0, 45)}...{" "}
+                <span 
+                  className="text-green-600 font-medium cursor-pointer hover:underline"
+                  onClick={() => setShowFullText(true)}
+                >
+                  voir plus
                 </span>
-              )}
-            </div>
-            <ProtectedComponent fallback={
-              <Button variant="outline" size="sm" className="h-7 px-2 text-xs opacity-50 cursor-not-allowed">
-                Se connecter
-              </Button>
-            }>
-              {!isCurrentUser && (
+              </>
+            ) : (
+              <>
+                {prediction.match}
+                {prediction.match.length > 45 && showFullText && (
+                  <span 
+                    className="text-green-600 font-medium cursor-pointer hover:underline ml-2"
+                    onClick={() => setShowFullText(false)}
+                  >
+                    voir moins
+                  </span>
+                )}
+              </>
+            )}
+          </div>
+          
+          {prediction.sport !== 'News' && (
+            <>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center space-x-2">
+                  <span className="text-gray-600">Cote: {prediction.odds}</span>
+                  {prediction.totalOdds && (
+                    <span className="text-sm text-orange-600 font-medium">
+                      Cote totale: {prediction.totalOdds}
+                    </span>
+                  )}
+                </div>
+                <ProtectedComponent fallback={
+                  <Button variant="outline" size="sm" className="h-7 px-2 text-xs opacity-50 cursor-not-allowed">
+                    Se connecter
+                  </Button>
+                }>
+                  {!isCurrentUser && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="h-7 px-2 text-xs"
+                      onClick={() => handleMenuAction('follow')}
+                      disabled={actionsLoading || followLoading}
+                    >
+                      {isFollowing ? 'Suivi' : 'Suivre'}
+                    </Button>
+                  )}
+                </ProtectedComponent>
+              </div>
+              
+              {/* Confidence Stars */}
+              <div className="flex items-center space-x-1">
+                <span className="text-sm text-gray-600">Confiance:</span>
+                {[...Array(5)].map((_, i) => (
+                  <Star
+                    key={i}
+                    className={`w-4 h-4 ${
+                      i < prediction.confidence ? 'text-yellow-400 fill-current' : 'text-gray-300'
+                    }`}
+                  />
+                ))}
+                <span className="text-sm text-yellow-600 font-medium ml-1">
+                  {prediction.confidence === 5 ? '🔥🔥' : prediction.confidence >= 4 ? '🔥' : ''}
+                </span>
+              </div>
+            </>
+          )}
+          
+          {prediction.sport === 'News' && !isCurrentUser && (
+            <div className="flex justify-end">
+              <ProtectedComponent fallback={
+                <Button variant="outline" size="sm" className="h-7 px-2 text-xs opacity-50 cursor-not-allowed">
+                  Se connecter
+                </Button>
+              }>
                 <Button 
                   variant="outline" 
                   size="sm" 
@@ -549,25 +634,9 @@ const PredictionCard = ({ prediction, onOpenModal }: PredictionCardProps) => {
                 >
                   {isFollowing ? 'Suivi' : 'Suivre'}
                 </Button>
-              )}
-            </ProtectedComponent>
-          </div>
-          
-          {/* Confidence Stars */}
-          <div className="flex items-center space-x-1">
-            <span className="text-sm text-gray-600">Confiance:</span>
-            {[...Array(5)].map((_, i) => (
-              <Star
-                key={i}
-                className={`w-4 h-4 ${
-                  i < prediction.confidence ? 'text-yellow-400 fill-current' : 'text-gray-300'
-                }`}
-              />
-            ))}
-            <span className="text-sm text-yellow-600 font-medium ml-1">
-              {prediction.confidence === 5 ? '🔥🔥' : prediction.confidence >= 4 ? '🔥' : ''}
-            </span>
-          </div>
+              </ProtectedComponent>
+            </div>
+          )}
         </div>
 
         {/* Media Content */}
@@ -664,9 +733,33 @@ const PredictionCard = ({ prediction, onOpenModal }: PredictionCardProps) => {
           </div>
         )}
 
-        {/* Analysis */}
+        {/* Analysis - Afficher pour tous les posts */}
         <div className="mb-4">
-          <p className="text-gray-700 text-sm leading-relaxed">{prediction.analysis}</p>
+          <p className="text-gray-700 text-sm leading-relaxed">
+            {prediction.analysis.length > 45 && !showFullText ? (
+              <>
+                {prediction.analysis.substring(0, 45)}...{" "}
+                <span 
+                  className="text-green-600 font-medium cursor-pointer hover:underline"
+                  onClick={() => setShowFullText(true)}
+                >
+                  voir plus
+                </span>
+              </>
+            ) : (
+              <>
+                {prediction.analysis}
+                {prediction.analysis.length > 45 && showFullText && (
+                  <span 
+                    className="text-green-600 font-medium cursor-pointer hover:underline ml-2"
+                    onClick={() => setShowFullText(false)}
+                  >
+                    voir moins
+                  </span>
+                )}
+              </>
+            )}
+          </p>
         </div>
 
         {/* Actions */}
@@ -725,32 +818,34 @@ const PredictionCard = ({ prediction, onOpenModal }: PredictionCardProps) => {
             </button>
           </div>
           
-          <ProtectedComponent fallback={
-            <Button className="bg-gray-400 text-white text-xs px-3 py-1 h-7 cursor-not-allowed shrink-0" size="sm" disabled>
-              Se connecter
-            </Button>
-          }>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button 
-                  className="bg-green-500 hover:bg-green-600 text-white text-xs px-3 py-1 h-7 shrink-0" 
-                  size="sm"
-                  onClick={async () => {
-                    // Add view when user clicks to see prediction
-                    await addView(prediction.id);
-                  }}
-                >
-                  Voir le pronostique
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Pronostics de {prediction.user.username}</DialogTitle>
-                </DialogHeader>
-                <PredictionModal prediction={prediction} />
-              </DialogContent>
-            </Dialog>
-          </ProtectedComponent>
+          {prediction.sport !== 'News' && (
+            <ProtectedComponent fallback={
+              <Button className="bg-gray-400 text-white text-xs px-3 py-1 h-7 cursor-not-allowed shrink-0" size="sm" disabled>
+                Se connecter
+              </Button>
+            }>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button 
+                    className="bg-green-500 hover:bg-green-600 text-white text-xs px-3 py-1 h-7 shrink-0" 
+                    size="sm"
+                    onClick={async () => {
+                      // Add view when user clicks to see prediction
+                      await addView(prediction.id);
+                    }}
+                  >
+                    Voir le pronostique
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Pronostics de {prediction.user.username}</DialogTitle>
+                  </DialogHeader>
+                  <PredictionModal prediction={prediction} />
+                </DialogContent>
+              </Dialog>
+            </ProtectedComponent>
+          )}
         </div>
       </CardContent>
       
@@ -774,6 +869,18 @@ const PredictionCard = ({ prediction, onOpenModal }: PredictionCardProps) => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Modal d'édition */}
+      <EditPostModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        post={{
+          id: prediction.id,
+          image_url: prediction.image,
+          video_url: prediction.video
+        }}
+        onSave={handleSavePost}
+      />
     </Card>
   );
 };
