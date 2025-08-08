@@ -351,7 +351,7 @@ const Profile = () => {
       <div className="px-4 pb-4">
         <Button
           onClick={() => navigate('/my-briefings')}
-          className="w-full bg-green-500 hover:bg-green-600 text-white"
+          className="w-full bg-black hover:bg-gray-800 text-white"
         >
           <Video className="w-4 h-4 mr-2" />
           Mes Briefings
