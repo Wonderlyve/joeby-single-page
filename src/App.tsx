@@ -9,6 +9,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import useScrollToTop from "@/hooks/useScrollToTop";
 import Index from "./pages/Index";
 import Profile from "./pages/Profile";
+import MyBriefings from "./pages/MyBriefings";
 import LiveStreams from "./pages/LiveStreams";
 import LiveStream from "./pages/LiveStream";
 import Brief from "./pages/Brief";
@@ -53,6 +54,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/my-briefings" element={<MyBriefings />} />
               <Route path="/channels" element={<Channels />} />
               <Route path="/channel-subscription/:channelId" element={<ChannelSubscription />} />
               <Route path="/lives" element={<LiveStreams />} />
