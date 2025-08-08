@@ -78,10 +78,9 @@ const DebriefingCommentsSheet: React.FC<DebriefingCommentsSheetProps> = ({
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent side="bottom" className="h-[80vh] max-h-[600px] p-0 flex flex-col">
         <SheetHeader className="p-4 border-b flex-shrink-0">
-          <div className="flex items-center justify-between">
-            <SheetTitle>{title} ({totalComments})</SheetTitle>
-            <Button variant="ghost" size="icon" onClick={onClose}>
-              <X className="w-5 h-5" />
+          <div className="flex justify-end">
+            <Button variant="ghost" size="icon" onClick={onClose} className="hover:bg-gray-100">
+              <X className="w-6 h-6" />
             </Button>
           </div>
         </SheetHeader>
