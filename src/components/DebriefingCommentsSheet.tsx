@@ -81,7 +81,7 @@ const DebriefingCommentsSheet: React.FC<DebriefingCommentsSheetProps> = ({
         {/* Comments list - scrollable area */}
         <div className="flex-1 overflow-hidden">
           <ScrollArea className="h-full">
-            <div className="p-4">
+            <div className="p-4 pt-8">
               {loading ? (
                 <div className="flex items-center justify-center py-8">
                   <div className="text-gray-500">Chargement des commentaires...</div>
