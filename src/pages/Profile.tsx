@@ -348,10 +348,10 @@ const Profile = () => {
       </div>
 
       {/* Quick Actions */}
-      <div className="px-4 pb-4">
+      <div className="pb-4">
         <Button
           onClick={() => navigate('/my-briefings')}
-          className="w-full bg-black hover:bg-gray-800 text-white"
+          className="w-full bg-black hover:bg-gray-800 text-white rounded-none"
         >
           <Video className="w-4 h-4 mr-2" />
           Mes Briefings
