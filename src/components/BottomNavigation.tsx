@@ -82,7 +82,7 @@ const BottomNavigation = () => {
   
   const navItems = [
     { icon: Home, label: 'Accueil', active: true, action: () => navigate('/') },
-    { icon: User, label: 'Statut', active: false, action: () => navigate('/story') },
+    { icon: User, label: 'Brief', active: false, action: () => navigate('/story') },
     { icon: Plus, label: '', active: false, action: handleCreateClick, isCenter: true },
     { icon: Crown, label: 'Canaux', active: false, action: () => navigate('/channels'), hasNotification: unreadChannelCount > 0, notificationCount: unreadChannelCount },
     { icon: Video, label: 'Briefing', active: false, action: () => navigate('/brief') },

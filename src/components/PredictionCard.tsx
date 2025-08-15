@@ -397,7 +397,7 @@ const PredictionCard = ({ prediction, onOpenModal }: PredictionCardProps) => {
   }
 
   return (
-    <Card className="shadow-sm hover:shadow-md transition-shadow">
+    <Card className="shadow-sm hover:shadow-md transition-shadow" data-prediction-id={prediction.id}>
       <CardContent className="p-4">
         {/* User Info */}
         <div className="flex items-center justify-between mb-3">
@@ -661,6 +661,21 @@ const PredictionCard = ({ prediction, onOpenModal }: PredictionCardProps) => {
                   playsInline
                   preload="metadata"
                   controls={false}
+                  onMouseEnter={() => {
+                    // Préchargement intelligent au survol
+                    if (prediction.video) {
+                      const videoContainer = document.querySelector(`[data-prediction-id="${prediction.id}"]`);
+                      if (videoContainer) {
+                        const nextPrediction = videoContainer.parentElement?.nextElementSibling?.querySelector('video source');
+                        if (nextPrediction?.getAttribute('src')) {
+                          fetch(nextPrediction.getAttribute('src')!, { 
+                            mode: 'cors', 
+                            cache: 'force-cache' 
+                          }).catch(() => {});
+                        }
+                      }
+                    }
+                  }}
                 >
                   <source src={prediction.video} type="video/mp4" />
                 </video>
@@ -727,7 +742,8 @@ const PredictionCard = ({ prediction, onOpenModal }: PredictionCardProps) => {
               <img
                 src={prediction.image}
                 alt="Contenu du post"
-                className="w-full h-48 object-cover"
+                className="w-full h-48 object-contain bg-gray-100"
+                loading="lazy"
               />
             )}
           </div>
