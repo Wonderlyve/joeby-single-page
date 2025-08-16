@@ -153,7 +153,7 @@ const PredictionCard = ({ prediction, onOpenModal }: PredictionCardProps) => {
       // Get the user profile by username
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('id')
+        .select('user_id')
         .eq('username', prediction.user.username)
         .single();
 
@@ -163,13 +163,12 @@ const PredictionCard = ({ prediction, onOpenModal }: PredictionCardProps) => {
         return;
       }
 
-      if (profile.id === user?.id) {
+      if (profile.user_id === user?.id) {
         // Navigate to own profile
         navigate('/profile');
       } else {
-        // Navigate to other user's profile - for now just show a message
-        // In a real app, you'd navigate to a user profile page with the user ID
-        toast.info(`Profil de ${prediction.user.username} - Fonctionnalité en développement`);
+        // Navigate to other user's profile
+        navigate(`/profile?userId=${profile.user_id}`);
       }
     } catch (error) {
       console.error('Error:', error);
@@ -739,12 +738,14 @@ const PredictionCard = ({ prediction, onOpenModal }: PredictionCardProps) => {
                 </div>
               </div>
             ) : prediction.image && (
-              <img
-                src={prediction.image}
-                alt="Contenu du post"
-                className="w-full h-48 object-contain bg-gray-100"
-                loading="lazy"
-              />
+              <div className="w-full h-48 overflow-hidden bg-gray-100 rounded-lg">
+                <img
+                  src={prediction.image}
+                  alt="Contenu du post"
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              </div>
             )}
           </div>
         )}
