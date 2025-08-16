@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import { ArrowLeft, Users, Crown, MoreVertical, Plus, Info, Heart, UserMinus, Share, Bell, BellOff, FileText, Trash2 } from 'lucide-react';
+import { ArrowLeft, Users, Crown, MoreVertical, Plus, Info, Heart, UserMinus, Share, Bell, BellOff, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/useAuth';
-import { useChannels } from '@/hooks/useChannels';
 import { toast } from 'sonner';
 
 interface ChannelInfo {
@@ -15,7 +14,6 @@ interface ChannelInfo {
   creator_username?: string;
   creator_badge?: string;
   subscriber_count?: number;
-  share_code?: string;
 }
 
 interface ChatHeaderProps {
@@ -30,7 +28,6 @@ interface ChatHeaderProps {
 
 const ChatHeader = ({ channelName, channelInfo, onBack, onCreateVipProno, onCreateDebriefing, onDeleteChannel, className }: ChatHeaderProps) => {
   const { user } = useAuth();
-  const { shareChannel } = useChannels();
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
 
   const handleCreateVipProno = () => {
@@ -57,40 +54,13 @@ const ChatHeader = ({ channelName, channelInfo, onBack, onCreateVipProno, onCrea
     toast.success('Désabonnement effectué !');
   };
 
-  const handleInvite = async () => {
-    if (!channelInfo) {
-      toast.error('Informations du canal non disponibles');
-      return;
-    }
-
-    // Create a channel object compatible with shareChannel function
-    const channelToShare = {
-      ...channelInfo,
-      creator_username: channelInfo.creator_username || 'Utilisateur',
-      subscriber_count: channelInfo.subscriber_count || 0,
-      is_private: true,
-      price: 0,
-      currency: 'EUR',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-
-    try {
-      await shareChannel(channelToShare);
-    } catch (error) {
-      toast.error('Erreur lors du partage du canal');
-    }
+  const handleInvite = () => {
+    toast.info('Invitation - Fonctionnalité en développement');
   };
 
   const handleToggleNotifications = () => {
     setNotificationsEnabled(!notificationsEnabled);
     toast.success(`Notifications ${!notificationsEnabled ? 'activées' : 'désactivées'} !`);
-  };
-
-  const handleDeleteChannel = () => {
-    if (onDeleteChannel) {
-      onDeleteChannel();
-    }
   };
 
   return (
@@ -147,16 +117,11 @@ const ChatHeader = ({ channelName, channelInfo, onBack, onCreateVipProno, onCrea
                   <Plus className="w-4 h-4 mr-2" />
                   Créer prono VIP
                 </DropdownMenuItem>
-                 <DropdownMenuItem onClick={handleCreateDebriefing}>
-                   <FileText className="w-4 h-4 mr-2" />
-                   Créer un débriefing
-                 </DropdownMenuItem>
-                 <DropdownMenuSeparator />
-                 <DropdownMenuItem onClick={handleDeleteChannel} className="text-red-600">
-                   <Trash2 className="w-4 h-4 mr-2" />
-                   Supprimer le canal
-                 </DropdownMenuItem>
-                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleCreateDebriefing}>
+                  <FileText className="w-4 h-4 mr-2" />
+                  Créer un débriefing
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
               </>
             )}
             <DropdownMenuItem onClick={handleChannelInfo}>

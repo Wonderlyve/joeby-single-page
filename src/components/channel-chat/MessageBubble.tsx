@@ -134,7 +134,14 @@ const MessageBubble = ({ message, isCreator, creatorId, onEdit, onDelete, onRepl
               {formatTime(message.created_at)}
             </span>
           )}
-          <span className="font-medium text-sm text-gray-700">
+          <span 
+            className="font-medium text-sm text-gray-700 cursor-pointer hover:underline"
+            onClick={() => {
+              if (message.user_id) {
+                window.location.href = `/profile?userId=${message.user_id}`;
+              }
+            }}
+          >
             {message.username}
           </span>
           {isFromCreator && (
@@ -228,11 +235,13 @@ const MessageBubble = ({ message, isCreator, creatorId, onEdit, onDelete, onRepl
                     {message.media_url && (
                       <div className={message.content ? "mt-2" : ""}>
                         {message.media_type === 'image' && (
-                          <img 
-                            src={message.media_url} 
-                            alt={message.media_filename || 'Image'} 
-                            className="max-w-full h-auto rounded-lg"
-                          />
+                          <div className="w-full h-48 rounded-lg overflow-hidden">
+                            <img 
+                              src={message.media_url} 
+                              alt={message.media_filename || 'Image'} 
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
                         )}
                         {message.media_type === 'video' && (
                           <video 
