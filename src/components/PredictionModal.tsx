@@ -197,7 +197,7 @@ const PredictionModal = ({ prediction }: PredictionModalProps) => {
             <div className="flex items-center justify-between">
               <div className="flex space-x-2">
                 <span className="px-3 py-1 text-sm font-medium bg-blue-100 text-blue-800 rounded-full">
-                  {prediction.betType || '1X2'}
+                  {prediction.betType || 'Simple'}
                 </span>
                 <span className="px-3 py-1 text-sm font-semibold bg-green-100 text-green-800 rounded-full">
                   {prediction.prediction}

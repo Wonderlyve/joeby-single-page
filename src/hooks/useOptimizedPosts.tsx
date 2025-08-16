@@ -28,6 +28,10 @@ export interface Post {
   is_liked?: boolean;
   saved_at?: string;
   status?: 'won' | 'lost' | 'pending';
+  bet_type?: string;
+  matches_data?: string;
+  reservation_code?: string;
+  post_type?: string;
 }
 
 const POSTS_PER_PAGE = 10;
@@ -207,6 +211,11 @@ export const useOptimizedPosts = () => {
     confidence: number;
     image_file?: File;
     video_file?: File;
+    bet_type?: string;
+    matches_data?: string;
+    reservation_code?: string;
+    post_type?: string;
+    content?: string;
   }) => {
     if (!user) {
       toast.error('Vous devez être connecté pour créer un post');
@@ -229,7 +238,7 @@ export const useOptimizedPosts = () => {
         .from('posts')
         .insert({
           user_id: user.id,
-          content: postData.analysis,
+          content: postData.content || postData.analysis,
           sport: postData.sport,
           match_teams: postData.match_teams,
           prediction_text: postData.prediction_text,
@@ -238,8 +247,13 @@ export const useOptimizedPosts = () => {
           confidence: postData.confidence,
           image_url,
           video_url,
+          bet_type: postData.bet_type,
+          matches_data: postData.matches_data,
+          reservation_code: postData.reservation_code,
+          post_type: postData.post_type,
           likes: 0,
-          shares: 0
+          shares: 0,
+          views: 0
         })
         .select()
         .single();
