@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Camera, Edit, Settings, Heart, MessageCircle, BarChart3, Trophy, Users, Star, Video } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -33,7 +33,10 @@ interface UserPost {
 const Profile = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { followersCount, followingCount, fetchCounts } = useFollows(user?.id);
+  const [searchParams] = useSearchParams();
+  const profileUserId = searchParams.get('userId') || user?.id;
+  const isOwnProfile = profileUserId === user?.id;
+  const { followersCount, followingCount, fetchCounts } = useFollows(profileUserId);
   const [profile, setProfile] = useState({
     username: '',
     display_name: '',
@@ -52,12 +55,14 @@ const Profile = () => {
   const [showFollowsList, setShowFollowsList] = useState<'followers' | 'following' | null>(null);
 
   useEffect(() => {
-    if (user) {
+    if (profileUserId) {
       fetchProfile();
       fetchUserPosts();
-      fetchSavedPosts();
+      if (isOwnProfile) {
+        fetchSavedPosts();
+      }
     }
-  }, [user]);
+  }, [profileUserId, isOwnProfile]);
 
   const fetchProfile = async () => {
     setLoading(true);
@@ -65,7 +70,7 @@ const Profile = () => {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('user_id', user?.id)
+        .eq('user_id', profileUserId)
         .single();
 
       if (error) {
@@ -85,14 +90,14 @@ const Profile = () => {
   };
 
   const fetchUserPosts = async () => {
-    if (!user) return;
+    if (!profileUserId) return;
     
     setPostsLoading(true);
     try {
       const { data, error } = await supabase
         .from('posts')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', profileUserId)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -507,7 +512,7 @@ const Profile = () => {
           </TabsContent>
           
           <TabsContent value="followers" className="mt-4">
-            <FollowersListView userId={user?.id || ''} />
+            <FollowersListView userId={profileUserId || ''} />
           </TabsContent>
         </Tabs>
       </div>
@@ -561,7 +566,7 @@ const Profile = () => {
         <FollowsList
           isOpen={!!showFollowsList}
           onClose={() => setShowFollowsList(null)}
-          userId={user?.id || ''}
+          userId={profileUserId || ''}
           type={showFollowsList}
         />
       )}
