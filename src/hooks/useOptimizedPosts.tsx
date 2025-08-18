@@ -24,6 +24,7 @@ export interface Post {
   username?: string;
   display_name?: string;
   avatar_url?: string;
+  badge?: string;
   like_count?: number;
   is_liked?: boolean;
   saved_at?: string;
@@ -57,7 +58,8 @@ export const useOptimizedPosts = () => {
           profiles:user_id (
             username,
             display_name,
-            avatar_url
+            avatar_url,
+            badge
           )
         `)
         .order('created_at', { ascending: false })
@@ -74,6 +76,7 @@ export const useOptimizedPosts = () => {
         username: post.profiles?.username,
         display_name: post.profiles?.display_name,
         avatar_url: post.profiles?.avatar_url,
+        badge: post.profiles?.badge,
         like_count: post.likes
       })) || [];
 
@@ -257,7 +260,8 @@ export const useOptimizedPosts = () => {
           profiles:user_id (
             username,
             display_name,
-            avatar_url
+            avatar_url,
+            badge
           )
         `)
         .single();
@@ -274,7 +278,12 @@ export const useOptimizedPosts = () => {
         username: data.profiles?.username,
         display_name: data.profiles?.display_name,
         avatar_url: data.profiles?.avatar_url,
-        like_count: data.likes
+        like_count: data.likes,
+        // S'assurer que tous les champs sont présents
+        badge: data.profiles?.badge,
+        user_id: data.user_id,
+        created_at: data.created_at,
+        updated_at: data.updated_at
       };
 
       // Mettre à jour localement le post dans la liste

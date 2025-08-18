@@ -180,7 +180,9 @@ const PredictionCard = ({ prediction, onOpenModal }: PredictionCardProps) => {
   };
 
   const handleSavePost = async (postId: string, postData: any, imageFile?: File, videoFile?: File) => {
-    await updatePost(postId, postData, imageFile, videoFile);
+    console.log('PredictionCard - handleSavePost called with:', { postId, postData });
+    const result = await updatePost(postId, postData, imageFile, videoFile);
+    console.log('PredictionCard - updatePost result:', result);
     setShowEditModal(false);
   };
 
