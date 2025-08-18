@@ -139,9 +139,11 @@ const MultipleBetModal = ({ open, onOpenChange, prediction }: MultipleBetModalPr
                         
                         {/* Côte */}
                         <div className="col-span-3 text-center">
-                          <div className="text-sm font-bold text-green-600">
-                            {match.odds}
-                          </div>
+                          {prediction.betType !== 'loto' && prediction.sport !== 'Loto' && (
+                            <div className="text-sm font-bold text-green-600">
+                              {match.odds}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
