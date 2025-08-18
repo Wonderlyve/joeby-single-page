@@ -252,7 +252,14 @@ export const useOptimizedPosts = () => {
         .update(updateData)
         .eq('id', postId)
         .eq('user_id', user.id)
-        .select()
+        .select(`
+          *,
+          profiles:user_id (
+            username,
+            display_name,
+            avatar_url
+          )
+        `)
         .single();
 
       if (error) {
@@ -261,12 +268,25 @@ export const useOptimizedPosts = () => {
         return null;
       }
 
+      // Transformer les données avec le profil
+      const transformedPost = {
+        ...data,
+        username: data.profiles?.username,
+        display_name: data.profiles?.display_name,
+        avatar_url: data.profiles?.avatar_url,
+        like_count: data.likes
+      };
+
+      // Mettre à jour localement le post dans la liste
+      setPosts(prev => prev.map(post => 
+        post.id === postId ? transformedPost : post
+      ));
+
       // Créer des notifications pour les followers
       await createFollowerUpdateNotifications(postId);
 
       toast.success('Post modifié avec succès !');
-      loadInitialPosts();
-      return data;
+      return transformedPost;
     } catch (error) {
       console.error('Error updating post:', error);
       toast.error('Erreur lors de la modification du post');
