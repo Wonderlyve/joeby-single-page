@@ -35,26 +35,60 @@ interface MultipleBetModalProps {
     reservationCode?: string;
     betType?: string;
     matches?: Match[];
+    matches_data?: string;
   };
 }
 
 const MultipleBetModal = ({ open, onOpenChange, prediction }: MultipleBetModalProps) => {
-  // Préparer les matchs pour l'affichage
-  const matches = prediction.matches ? 
-    prediction.matches.map((match, index) => ({
-      ...match,
+  // Préparer les matchs pour l'affichage - Parse matches_data si disponible
+  let parsedMatches: any[] = [];
+  
+  if (prediction.matches_data) {
+    try {
+      const matchesData = JSON.parse(prediction.matches_data);
+      if (Array.isArray(matchesData)) {
+        parsedMatches = matchesData;
+      } else if (matchesData.lotoNumbers) {
+        // Cas spécial pour le loto
+        parsedMatches = [{
+          teams: 'Loto',
+          prediction: `Numéros: ${matchesData.lotoNumbers.join(', ')}`,
+          odds: '',
+          league: 'Loto',
+          time: ''
+        }];
+      }
+    } catch (error) {
+      console.error('Erreur parsing matches_data:', error);
+    }
+  }
+  
+  // Utiliser les matchs parsés ou les données existantes ou créer un match par défaut
+  const matches = parsedMatches.length > 0 ? 
+    parsedMatches.map((match, index) => ({
       id: match.id || `match-${index}`,
+      teams: match.homeTeam && match.awayTeam ? `${match.homeTeam} vs ${match.awayTeam}` : match.teams || prediction.match,
+      prediction: match.pronostic || match.prediction || prediction.prediction,
+      odds: match.odd || match.odds || prediction.odds,
+      league: match.sport || match.league || prediction.sport,
+      time: match.time || '20:00',
       betType: match.betType || prediction.betType
     })) :
-    [{
-      id: "1",
-      teams: prediction.match,
-      prediction: prediction.prediction,
-      odds: prediction.odds,
-      league: prediction.sport,
-      time: '20:00',
-      betType: prediction.betType
-    }];
+    prediction.matches ? 
+      prediction.matches.map((match, index) => ({
+        ...match,
+        id: match.id || `match-${index}`,
+        betType: match.betType || prediction.betType
+      })) :
+      [{
+        id: "1",
+        teams: prediction.match,
+        prediction: prediction.prediction,
+        odds: prediction.odds,
+        league: prediction.sport,
+        time: '20:00',
+        betType: prediction.betType
+      }];
 
   const isMultipleBet = prediction.betType === 'combine' || prediction.betType === 'multiple' || matches.length > 1;
   const betTypeLabel = prediction.betType === 'combine' ? 'Pari Combiné' : 'Paris Multiples';
