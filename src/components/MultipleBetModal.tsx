@@ -130,60 +130,34 @@ const MultipleBetModal = ({ open, onOpenChange, prediction }: MultipleBetModalPr
               </div>
             </div>
 
-            {/* Tableau des matchs optimisé mobile */}
+            {/* Matchs sélectionnés - Chaque match dans son propre bloc */}
             <div className="space-y-3">
               <h4 className="font-medium text-sm text-muted-foreground">
-                {betTypeLabel} ({matches.length} match{matches.length > 1 ? 's' : ''})
+                Matchs sélectionnés ({matches.length} match{matches.length > 1 ? 's' : ''})
               </h4>
               
-              <div className="border rounded-lg overflow-hidden">
-                {/* Header du tableau */}
-                <div className="bg-muted/30 px-3 py-2 border-b">
-                  <div className="grid grid-cols-12 gap-2 text-xs font-medium text-muted-foreground">
-                    <div className="col-span-5">Équipes</div>
-                    <div className="col-span-4">Pronostic</div>
-                    <div className="col-span-3 text-center">Côte</div>
+              {matches.map((match, index) => (
+                <div key={match.id || index} className="p-3 mb-2 border rounded-xl shadow-sm bg-background">
+                  <div className="flex justify-between items-center">
+                    <div className="flex-1">
+                      <p className="font-semibold text-sm mb-1">{match.teams}</p>
+                      <p className="text-muted-foreground text-xs">
+                        ⚽ {match.league} • ⏰ {match.time}
+                      </p>
+                    </div>
+                    {prediction.betType !== 'loto' && prediction.sport !== 'Loto' && (
+                      <div className="text-right ml-3">
+                        <p className="text-blue-600 font-bold text-sm">Cote {match.odds}</p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-2">
+                    <span className="bg-green-100 text-green-700 text-xs px-3 py-1 rounded-full">
+                      {match.prediction}
+                    </span>
                   </div>
                 </div>
-                
-                {/* Corps du tableau */}
-                <div className="divide-y">
-                  {matches.map((match, index) => (
-                    <div key={match.id} className="px-3 py-3">
-                      <div className="grid grid-cols-12 gap-2 items-center">
-                        {/* Équipes */}
-                        <div className="col-span-5">
-                          <div className="text-sm font-medium text-foreground leading-tight">
-                            {match.teams}
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-0.5">
-                            {match.league} • {match.time}
-                          </div>
-                        </div>
-                        
-                        {/* Pronostic */}
-                        <div className="col-span-4">
-                          <Badge variant="secondary" className="text-xs mb-1">
-                            {match.betType || '1X2'}
-                          </Badge>
-                          <div className="text-sm font-medium text-foreground">
-                            {match.prediction}
-                          </div>
-                        </div>
-                        
-                        {/* Côte */}
-                        <div className="col-span-3 text-center">
-                          {prediction.betType !== 'loto' && prediction.sport !== 'Loto' && (
-                            <div className="text-sm font-bold text-green-600">
-                              {match.odds}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              ))}
             </div>
 
             {/* Côte totale pour pari combiné */}
