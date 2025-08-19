@@ -80,7 +80,8 @@ interface PredictionCardProps {
 const PredictionCard = ({ prediction, onOpenModal }: PredictionCardProps) => {
   const navigate = useNavigate();
   const { requireAuth, user } = useAuth();
-  const { likePost, updatePost } = useOptimizedPosts();
+  const { likePost } = useOptimizedPosts();
+  const { updatePost } = usePosts();
   const { isLiked: isPostLiked, likesCount: postLikesCount, toggleLike } = usePostLikes(prediction.id);
   const { commentsCount } = usePostComments(prediction.id);
   const { addView } = usePostViews();
@@ -179,10 +180,8 @@ const PredictionCard = ({ prediction, onOpenModal }: PredictionCardProps) => {
     setShowEditModal(true);
   };
 
-  const handleSavePost = async (postId: string, postData: any, imageFile?: File, videoFile?: File) => {
-    console.log('PredictionCard - handleSavePost called with:', { postId, postData });
-    const result = await updatePost(postId, postData, imageFile, videoFile);
-    console.log('PredictionCard - updatePost result:', result);
+  const handleSavePost = async (postId: string, imageFile?: File, videoFile?: File) => {
+    await updatePost(postId, imageFile, videoFile);
     setShowEditModal(false);
   };
 
@@ -894,15 +893,6 @@ const PredictionCard = ({ prediction, onOpenModal }: PredictionCardProps) => {
         onClose={() => setShowEditModal(false)}
         post={{
           id: prediction.id,
-          content: prediction.analysis, // Utiliser l'analyse comme contenu par défaut
-          sport: prediction.sport,
-          match_teams: prediction.match,
-          prediction_text: prediction.prediction,
-          analysis: prediction.analysis,
-          odds: parseFloat(prediction.odds) || 1.0,
-          confidence: prediction.confidence || 50,
-          bet_type: prediction.betType || '1X2',
-          matches_data: prediction.matches ? JSON.stringify(prediction.matches) : '',
           image_url: prediction.image,
           video_url: prediction.video
         }}
