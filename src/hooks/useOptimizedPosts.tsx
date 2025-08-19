@@ -24,7 +24,6 @@ export interface Post {
   username?: string;
   display_name?: string;
   avatar_url?: string;
-  badge?: string;
   like_count?: number;
   is_liked?: boolean;
   saved_at?: string;
@@ -58,8 +57,7 @@ export const useOptimizedPosts = () => {
           profiles:user_id (
             username,
             display_name,
-            avatar_url,
-            badge
+            avatar_url
           )
         `)
         .order('created_at', { ascending: false })
@@ -76,7 +74,6 @@ export const useOptimizedPosts = () => {
         username: post.profiles?.username,
         display_name: post.profiles?.display_name,
         avatar_url: post.profiles?.avatar_url,
-        badge: post.profiles?.badge,
         like_count: post.likes
       })) || [];
 
@@ -202,140 +199,6 @@ export const useOptimizedPosts = () => {
       console.error('Error uploading file:', error);
       toast.error('Erreur lors de l\'upload du fichier');
       return null;
-    }
-  };
-
-  const updatePost = async (postId: string, postData: {
-    content?: string;
-    sport?: string;
-    match_teams?: string;
-    prediction_text?: string;
-    analysis?: string;
-    odds?: number;
-    confidence?: number;
-    bet_type?: string;
-    matches_data?: string;
-  }, imageFile?: File, videoFile?: File) => {
-    if (!user) {
-      toast.error('Vous devez être connecté pour modifier un post');
-      return null;
-    }
-
-    try {
-      let image_url = undefined;
-      let video_url = undefined;
-
-      if (imageFile) {
-        image_url = await uploadOptimizedFile(imageFile, 'post-images');
-        if (!image_url) return null;
-      }
-
-      if (videoFile) {
-        video_url = await uploadOptimizedFile(videoFile, 'post-videos');
-        if (!video_url) return null;
-      }
-
-      const updateData: any = {
-        ...postData,
-        updated_at: new Date().toISOString()
-      };
-
-      if (image_url) updateData.image_url = image_url;
-      if (video_url) updateData.video_url = video_url;
-
-      // Clean undefined values
-      Object.keys(updateData).forEach(key => {
-        if (updateData[key] === undefined) {
-          delete updateData[key];
-        }
-      });
-
-      const { data, error } = await supabase
-        .from('posts')
-        .update(updateData)
-        .eq('id', postId)
-        .eq('user_id', user.id)
-        .select(`
-          *,
-          profiles:user_id (
-            username,
-            display_name,
-            avatar_url,
-            badge
-          )
-        `)
-        .single();
-
-      if (error) {
-        console.error('Error updating post:', error);
-        toast.error('Erreur lors de la modification du post');
-        return null;
-      }
-
-      // Transformer les données avec le profil
-      const transformedPost = {
-        ...data,
-        username: data.profiles?.username,
-        display_name: data.profiles?.display_name,
-        avatar_url: data.profiles?.avatar_url,
-        like_count: data.likes,
-        // S'assurer que tous les champs sont présents
-        badge: data.profiles?.badge,
-        user_id: data.user_id,
-        created_at: data.created_at,
-        updated_at: data.updated_at
-      };
-
-      // Mettre à jour localement le post dans la liste
-      setPosts(prev => prev.map(post => 
-        post.id === postId ? transformedPost : post
-      ));
-
-      // Créer des notifications pour les followers
-      await createFollowerUpdateNotifications(postId);
-
-      toast.success('Post modifié avec succès !');
-      return transformedPost;
-    } catch (error) {
-      console.error('Error updating post:', error);
-      toast.error('Erreur lors de la modification du post');
-      return null;
-    }
-  };
-
-  const createFollowerUpdateNotifications = async (postId: string) => {
-    try {
-      // Récupérer les followers de l'utilisateur
-      const { data: followers } = await supabase
-        .from('follows')
-        .select('follower_id')
-        .eq('following_id', user!.id);
-
-      if (followers && followers.length > 0) {
-        // Récupérer le nom d'affichage de l'utilisateur
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('display_name, username')
-          .eq('user_id', user!.id)
-          .single();
-
-        const displayName = profile?.display_name || profile?.username || 'Un utilisateur';
-
-        // Créer une notification pour chaque follower
-        const notifications = followers.map(follower => ({
-          user_id: follower.follower_id,
-          type: 'post_update',
-          content: `${displayName} a modifié un pronostic`,
-          post_id: postId,
-          from_user_id: user!.id
-        }));
-
-        await supabase
-          .from('notifications')
-          .insert(notifications);
-      }
-    } catch (error) {
-      console.error('Error creating follower notifications:', error);
     }
   };
 
@@ -568,7 +431,6 @@ export const useOptimizedPosts = () => {
     initialLoading,
     hasMore,
     createPost,
-    updatePost,
     likePost,
     loadMorePosts,
     refetch: loadInitialPosts
