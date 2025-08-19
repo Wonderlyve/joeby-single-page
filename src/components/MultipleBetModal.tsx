@@ -35,28 +35,61 @@ interface MultipleBetModalProps {
     reservationCode?: string;
     betType?: string;
     matches?: Match[];
+    matches_data?: string; // Données JSON des matchs multiples
   };
 }
 
 const MultipleBetModal = ({ open, onOpenChange, prediction }: MultipleBetModalProps) => {
-  // Préparer les matchs pour l'affichage
-  const matches = prediction.matches
-    ? prediction.matches.map((match, index) => ({
-        ...match,
+  // Parser les données des matchs depuis matches_data
+  const parseMatches = () => {
+    // D'abord essayer de parser matches_data (format JSON string)
+    if (prediction.matches_data) {
+      try {
+        const parsedData = JSON.parse(prediction.matches_data);
+        if (Array.isArray(parsedData)) {
+          return parsedData.map((match: any, index: number) => ({
+            id: match.id || `match-${index}`,
+            teams: `${match.team1} vs ${match.team2}`,
+            prediction: match.prediction,
+            odds: match.odds,
+            league: match.league || prediction.sport,
+            time: match.time || '20:00',
+            betType: match.betType || prediction.betType,
+          }));
+        }
+      } catch (error) {
+        console.error('Erreur lors du parsing des matches_data:', error);
+      }
+    }
+    
+    // Ensuite vérifier si matches existe déjà parsé
+    if (prediction.matches && Array.isArray(prediction.matches)) {
+      return prediction.matches.map((match: any, index: number) => ({
         id: match.id || `match-${index}`,
+        teams: `${match.team1} vs ${match.team2}`,
+        prediction: match.prediction,
+        odds: match.odds,
+        league: match.league || prediction.sport,
+        time: match.time || '20:00',
         betType: match.betType || prediction.betType,
-      }))
-    : [
-        {
-          id: '1',
-          teams: prediction.match,
-          prediction: prediction.prediction,
-          odds: prediction.odds,
-          league: prediction.sport,
-          time: '20:00',
-          betType: prediction.betType,
-        },
-      ];
+      }));
+    }
+    
+    // Fallback pour un seul match
+    return [
+      {
+        id: '1',
+        teams: prediction.match,
+        prediction: prediction.prediction,
+        odds: prediction.odds,
+        league: prediction.sport,
+        time: '20:00',
+        betType: prediction.betType,
+      },
+    ];
+  };
+
+  const matches = parseMatches();
 
   const isMultipleBet =
     prediction.betType === 'combine' ||
