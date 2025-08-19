@@ -40,55 +40,66 @@ interface MultipleBetModalProps {
 }
 
 const MultipleBetModal = ({ open, onOpenChange, prediction }: MultipleBetModalProps) => {
-  // Préparer les matchs pour l'affichage - Parse matches_data si disponible
-  let parsedMatches: any[] = [];
+  // Fonction pour normaliser un match individuel
+  const normalizeMatch = (match: any, index: number, fallbackData: any) => ({
+    id: match.id || `match-${index}`,
+    teams: match.homeTeam && match.awayTeam 
+      ? `${match.homeTeam} vs ${match.awayTeam}` 
+      : match.teams || match.match || fallbackData.match,
+    prediction: match.pronostic || match.prediction || fallbackData.prediction,
+    odds: match.odd || match.odds || fallbackData.odds,
+    league: match.sport || match.league || fallbackData.sport,
+    time: match.time || match.heure || '20:00',
+    betType: match.betType || match.typeProno || fallbackData.betType
+  });
+
+  // Préparer les matchs pour l'affichage
+  let matches: Match[] = [];
   
+  // 1. Essayer de parser matches_data d'abord
   if (prediction.matches_data) {
     try {
       const matchesData = JSON.parse(prediction.matches_data);
+      
       if (Array.isArray(matchesData)) {
-        parsedMatches = matchesData;
+        // Si c'est un tableau de matchs
+        matches = matchesData.map((match, index) => normalizeMatch(match, index, prediction));
       } else if (matchesData.lotoNumbers) {
         // Cas spécial pour le loto
-        parsedMatches = [{
+        matches = [{
+          id: "loto-1",
           teams: 'Loto',
           prediction: `Numéros: ${matchesData.lotoNumbers.join(', ')}`,
           odds: '',
           league: 'Loto',
           time: ''
         }];
+      } else if (matchesData.homeTeam || matchesData.teams) {
+        // Si c'est un seul objet match
+        matches = [normalizeMatch(matchesData, 0, prediction)];
       }
     } catch (error) {
       console.error('Erreur parsing matches_data:', error);
     }
   }
   
-  // Utiliser les matchs parsés ou les données existantes ou créer un match par défaut
-  const matches = parsedMatches.length > 0 ? 
-    parsedMatches.map((match, index) => ({
-      id: match.id || `match-${index}`,
-      teams: match.homeTeam && match.awayTeam ? `${match.homeTeam} vs ${match.awayTeam}` : match.teams || prediction.match,
-      prediction: match.pronostic || match.prediction || prediction.prediction,
-      odds: match.odd || match.odds || prediction.odds,
-      league: match.sport || match.league || prediction.sport,
-      time: match.time || '20:00',
-      betType: match.betType || prediction.betType
-    })) :
-    prediction.matches ? 
-      prediction.matches.map((match, index) => ({
-        ...match,
-        id: match.id || `match-${index}`,
-        betType: match.betType || prediction.betType
-      })) :
-      [{
-        id: "1",
-        teams: prediction.match,
-        prediction: prediction.prediction,
-        odds: prediction.odds,
-        league: prediction.sport,
-        time: '20:00',
-        betType: prediction.betType
-      }];
+  // 2. Si pas de matches_data valide, utiliser le tableau matches
+  if (matches.length === 0 && prediction.matches && prediction.matches.length > 0) {
+    matches = prediction.matches.map((match, index) => normalizeMatch(match, index, prediction));
+  }
+  
+  // 3. Si toujours pas de matchs, créer un match par défaut
+  if (matches.length === 0) {
+    matches = [{
+      id: "default-1",
+      teams: prediction.match,
+      prediction: prediction.prediction,
+      odds: prediction.odds,
+      league: prediction.sport,
+      time: '20:00',
+      betType: prediction.betType
+    }];
+  }
 
   const isMultipleBet = prediction.betType === 'combine' || prediction.betType === 'multiple' || matches.length > 1;
   const betTypeLabel = prediction.betType === 'combine' ? 'Pari Combiné' : 'Paris Multiples';
