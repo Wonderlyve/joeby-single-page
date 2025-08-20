@@ -53,6 +53,23 @@ const MultipleBetModal = ({ open, onOpenChange, prediction }: MultipleBetModalPr
     betType: match.betType || match.typeProno || fallbackData.betType
   });
 
+  // Fonction pour diviser les matchs multiples séparés par "|"
+  const splitMultipleMatches = (matchString: string, predictionString: string, oddsString: string) => {
+    const matchParts = matchString.split('|').map(m => m.trim());
+    const predictionParts = predictionString.split('|').map(p => p.trim());
+    const oddsParts = oddsString.split('|').map(o => o.trim());
+    
+    return matchParts.map((match, index) => ({
+      id: `split-${index}`,
+      teams: match,
+      prediction: predictionParts[index] || predictionParts[0] || predictionString,
+      odds: oddsParts[index] || oddsParts[0] || oddsString,
+      league: prediction.sport,
+      time: '20:00',
+      betType: prediction.betType
+    }));
+  };
+
   // Préparer les matchs pour l'affichage
   let matches: Match[] = [];
   
@@ -88,17 +105,27 @@ const MultipleBetModal = ({ open, onOpenChange, prediction }: MultipleBetModalPr
     matches = prediction.matches.map((match, index) => normalizeMatch(match, index, prediction));
   }
   
-  // 3. Si toujours pas de matchs, créer un match par défaut
+  // 3. Si toujours pas de matchs, vérifier si le match principal contient plusieurs matchs séparés par "|"
   if (matches.length === 0) {
-    matches = [{
-      id: "default-1",
-      teams: prediction.match,
-      prediction: prediction.prediction,
-      odds: prediction.odds,
-      league: prediction.sport,
-      time: '20:00',
-      betType: prediction.betType
-    }];
+    if (prediction.match && prediction.match.includes('|')) {
+      // Diviser les matchs multiples
+      matches = splitMultipleMatches(
+        prediction.match, 
+        prediction.prediction || '', 
+        prediction.odds || ''
+      );
+    } else {
+      // Créer un match par défaut
+      matches = [{
+        id: "default-1",
+        teams: prediction.match,
+        prediction: prediction.prediction,
+        odds: prediction.odds,
+        league: prediction.sport,
+        time: '20:00',
+        betType: prediction.betType
+      }];
+    }
   }
 
   const isMultipleBet = prediction.betType === 'combine' || prediction.betType === 'multiple' || matches.length > 1;
