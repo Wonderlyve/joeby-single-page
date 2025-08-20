@@ -1,6 +1,6 @@
 
 import { useRef, useState } from 'react';
-import { Image, Video, X, Loader2, Camera } from 'lucide-react';
+import { Image, Video, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { ImageOptimizer } from './ImageOptimizer';
@@ -17,7 +17,6 @@ interface OptimizedFileUploadProps {
 const OptimizedFileUpload = ({ onImageSelect, onVideoSelect, selectedImage, selectedVideo }: OptimizedFileUploadProps) => {
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
 
@@ -125,44 +124,6 @@ const OptimizedFileUpload = ({ onImageSelect, onVideoSelect, selectedImage, sele
     if (videoInputRef.current) {
       videoInputRef.current.value = '';
     }
-    if (cameraInputRef.current) {
-      cameraInputRef.current.value = '';
-    }
-  };
-
-  const handleCameraCapture = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('video/')) {
-      toast.error('Erreur lors de la capture vidéo');
-      return;
-    }
-
-    setProcessing(true);
-    setProgress(0);
-
-    try {
-      const progressInterval = setInterval(() => {
-        setProgress(prev => Math.min(prev + 10, 90));
-      }, 100);
-
-      // Génération du thumbnail
-      const thumbnail = await VideoOptimizer.generateVideoThumbnail(file);
-      
-      clearInterval(progressInterval);
-      setProgress(100);
-      
-      onVideoSelect(file, thumbnail);
-      toast.success('Vidéo capturée avec succès !');
-    } catch (error) {
-      console.error('Erreur lors du traitement:', error);
-      toast.error('Erreur lors du traitement de la vidéo');
-      onVideoSelect(file);
-    } finally {
-      setProcessing(false);
-      setProgress(0);
-    }
   };
 
   return (
@@ -189,17 +150,6 @@ const OptimizedFileUpload = ({ onImageSelect, onVideoSelect, selectedImage, sele
         >
           {processing ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Video className="w-4 h-4 mr-1" />}
           Vidéo
-        </Button>
-        <Button 
-          type="button"
-          variant="outline" 
-          size="sm" 
-          className="flex-1 text-xs"
-          onClick={() => cameraInputRef.current?.click()}
-          disabled={processing}
-        >
-          {processing ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Camera className="w-4 h-4 mr-1" />}
-          Caméra
         </Button>
       </div>
 
@@ -268,14 +218,6 @@ const OptimizedFileUpload = ({ onImageSelect, onVideoSelect, selectedImage, sele
         type="file"
         accept="video/*"
         onChange={handleVideoSelect}
-        className="hidden"
-      />
-      <input
-        ref={cameraInputRef}
-        type="file"
-        accept="video/*"
-        capture="user"
-        onChange={handleCameraCapture}
         className="hidden"
       />
     </div>
