@@ -119,6 +119,7 @@ const PredictionCard = ({ prediction, onOpenModal }: PredictionCardProps) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showFullText, setShowFullText] = useState(false);
+  const [showPredictionModal, setShowPredictionModal] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const hideControlsTimeout = useRef<NodeJS.Timeout>();
 
@@ -841,7 +842,7 @@ const PredictionCard = ({ prediction, onOpenModal }: PredictionCardProps) => {
                 Se connecter
               </Button>
             }>
-              <Dialog>
+              <Dialog open={showPredictionModal} onOpenChange={setShowPredictionModal}>
                 <DialogTrigger asChild>
                   <Button 
                     className="bg-green-500 hover:bg-green-600 text-white text-xs px-3 py-1 h-7 shrink-0" 
@@ -849,6 +850,7 @@ const PredictionCard = ({ prediction, onOpenModal }: PredictionCardProps) => {
                     onClick={async () => {
                       // Add view when user clicks to see prediction
                       await addView(prediction.id);
+                      setShowPredictionModal(true);
                     }}
                   >
                     Voir le pronostique
@@ -858,7 +860,10 @@ const PredictionCard = ({ prediction, onOpenModal }: PredictionCardProps) => {
                   <DialogHeader>
                     <DialogTitle>Pronostics de {prediction.user.username}</DialogTitle>
                   </DialogHeader>
-                  <PredictionModal prediction={prediction} />
+                  <PredictionModal 
+                    prediction={prediction} 
+                    onClose={() => setShowPredictionModal(false)} 
+                  />
                 </DialogContent>
               </Dialog>
             </ProtectedComponent>

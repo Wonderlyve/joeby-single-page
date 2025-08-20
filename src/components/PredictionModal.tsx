@@ -35,9 +35,10 @@ interface PredictionModalProps {
       betType?: string;
     }>;
   };
+  onClose?: () => void;
 }
 
-const PredictionModal = ({ prediction }: PredictionModalProps) => {
+const PredictionModal = ({ prediction, onClose }: PredictionModalProps) => {
   const [showMultipleBetModal, setShowMultipleBetModal] = useState(false);
 
   const isMultipleBet = prediction.betType === 'combine' || prediction.betType === 'multiple' || (prediction.matches && prediction.matches.length > 1);
@@ -145,7 +146,11 @@ const PredictionModal = ({ prediction }: PredictionModalProps) => {
     return (
       <MultipleBetModal 
         open={true}
-        onOpenChange={() => {}}
+        onOpenChange={(open) => {
+          if (!open && onClose) {
+            onClose();
+          }
+        }}
         prediction={prediction}
       />
     );
