@@ -183,16 +183,11 @@ const MultipleBetModal = ({ open, onOpenChange, prediction }: MultipleBetModalPr
                         ⚽ {match.league} • ⏰ {match.time}
                       </p>
                     </div>
-                    {prediction.betType !== 'loto' && prediction.sport !== 'Loto' && (
-                      <div className="text-right ml-3">
-                        <p className="text-blue-600 font-bold text-sm">Cote {match.odds}</p>
-                      </div>
-                    )}
-                  </div>
-                  <div className="mt-2">
-                    <span className="bg-green-100 text-green-700 text-xs px-3 py-1 rounded-full">
-                      {match.prediction}
-                    </span>
+                    <div className="text-right ml-3">
+                      <span className="bg-green-100 text-green-700 text-xs px-3 py-1 rounded-full">
+                        {match.prediction}
+                      </span>
+                    </div>
                   </div>
                 </div>
               ))}
